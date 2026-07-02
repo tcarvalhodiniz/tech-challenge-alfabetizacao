@@ -22,9 +22,14 @@
 import os
 import sys
 
-# Torna os módulos do repositório importáveis (repo adicionado como Git folder no Databricks).
-sys.path.append("/Workspace/Repos/tech-challenge-alfabetizacao")
-sys.path.append("..")
+# Torna os módulos do repositório (config/, src/) importáveis. Sobe a partir da pasta
+# atual até achar a raiz do projeto — funciona tanto em Git folder (/Workspace/Users/...)
+# quanto em Repo legado, sem depender de um caminho fixo.
+_raiz = os.getcwd()
+while _raiz != "/" and not os.path.isdir(os.path.join(_raiz, "config")):
+    _raiz = os.path.dirname(_raiz)
+sys.path.insert(0, _raiz)
+sys.path.append("..")  # fallback: notebook executado a partir de notebooks/
 
 # Credencial da service account, enviada para o Volume `alfabetizacao`.
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
