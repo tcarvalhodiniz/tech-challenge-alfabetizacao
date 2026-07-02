@@ -35,7 +35,7 @@ PATHS = {
 #   Dataset: basedosdados.br_inep_avaliacao_alfabetizacao
 #   As 6 entidades exigidas pelo enunciado + o dicionário de dados.
 # ---------------------------------------------------------------------------
-BILLING_PROJECT_ID = os.getenv("GCP_PROJECT", "seu-projeto-gcp")  # projeto GCP p/ billing
+BILLING_PROJECT_ID = os.getenv("GCP_PROJECT", "tech-challenge-fiap-501217")  # projeto GCP p/ billing
 BD_PROJECT = "basedosdados"
 DATASET_ID = "br_inep_avaliacao_alfabetizacao"
 

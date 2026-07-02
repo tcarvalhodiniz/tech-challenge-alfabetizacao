@@ -19,11 +19,17 @@
 
 # COMMAND ----------
 
+import os
 import sys
 
 # Torna os módulos do repositório importáveis (repo adicionado como Git folder no Databricks).
 sys.path.append("/Workspace/Repos/tech-challenge-alfabetizacao")
 sys.path.append("..")
+
+# Credencial da service account, enviada para o Volume `alfabetizacao`.
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
+    "/Volumes/workspace/default/alfabetizacao/tech-challenge-fiap-501217-170d3c25c0e2.json"
+)
 
 from config import settings
 from src.ingestion.batch_basedosdados import ingerir_batch
