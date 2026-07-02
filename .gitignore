@@ -1,0 +1,27 @@
+# Dados (não versionar conteúdo — apenas a estrutura de pastas)
+data/**
+!data/**/.gitkeep
+
+# Credenciais / segredos
+*.json
+!config/*.example.json
+.env
+*-key.json
+service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# Spark / Delta
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Sistema
+.DS_Store
+Thumbs.db
