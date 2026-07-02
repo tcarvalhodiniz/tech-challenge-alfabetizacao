@@ -32,34 +32,48 @@ PATHS = {
 
 # ---------------------------------------------------------------------------
 # Fontes (Base dos Dados / BigQuery)
-#   Os dataset_id/table_id abaixo são confirmados na etapa de ingestão.
-#   Mapeiam as 6 entidades exigidas pelo enunciado.
+#   Dataset: basedosdados.br_inep_avaliacao_alfabetizacao
+#   As 6 entidades exigidas pelo enunciado + o dicionário de dados.
 # ---------------------------------------------------------------------------
-BILLING_PROJECT_ID = os.getenv("GCP_PROJECT", "seu-projeto-gcp")
+BILLING_PROJECT_ID = os.getenv("GCP_PROJECT", "seu-projeto-gcp")  # projeto GCP p/ billing
+BD_PROJECT = "basedosdados"
+DATASET_ID = "br_inep_avaliacao_alfabetizacao"
 
-FONTES = {
-    "uf":                  {"tipo": "batch", "tabela": "br_bd_diretorios_brasil.uf"},
-    "municipio":           {"tipo": "batch", "tabela": "br_bd_diretorios_brasil.municipio"},
-    "meta_brasil":         {"tipo": "batch", "tabela": "<dataset>.meta_alfabetizacao_brasil"},
-    "meta_uf":             {"tipo": "batch", "tabela": "<dataset>.meta_alfabetizacao_uf"},
-    "meta_municipio":      {"tipo": "batch", "tabela": "<dataset>.meta_alfabetizacao_municipio"},
-    "alunos":             {"tipo": "batch", "tabela": "<dataset>.dados_alunos"},
-    # A "medição do indicador" também chega em tempo quase-real via streaming.
-    "indicador_evento":    {"tipo": "streaming", "topico": "indicador-alfabetizacao"},
+# table_id na Base dos Dados -> entidade do desafio
+TABELAS_BATCH = {
+    "uf":                          "UF (resultados por estado)",
+    "municipio":                   "Município (resultados por município)",
+    "meta_alfabetizacao_brasil":   "Meta Alfabetização Brasil",
+    "meta_alfabetizacao_uf":       "Meta Alfabetização por UF",
+    "meta_alfabetizacao_municipio":"Meta Alfabetização por Município",
+    "alunos":                      "Dados de alunos (microdados)",
+    "dicionario":                  "Dicionário de dados",
 }
 
-# Parâmetro de negócio: ponto de corte de proficiência do Saeb (Alfabetiza Brasil 2023)
+# A "medição do indicador" também chega em tempo quase-real via streaming.
+TOPICO_STREAMING = "indicador-alfabetizacao"
+
+# ---------------------------------------------------------------------------
+# Semântica de negócio (usada na Silver/Gold)
+# ---------------------------------------------------------------------------
+# Ponto de corte de proficiência do Saeb (Alfabetiza Brasil 2023)
 PONTO_CORTE_SAEB = 743
+# Coluna que representa o indicador (% de alunos alfabetizados)
+COLUNA_INDICADOR = "taxa_alfabetizacao"
+# Metas vêm em formato largo — colunas de meta por ano-alvo
+COLUNAS_META = [f"meta_alfabetizacao_{ano}" for ano in range(2024, 2031)]
 
 # ---------------------------------------------------------------------------
 # Regras de qualidade de dados (por camada)
 # ---------------------------------------------------------------------------
+# chave que identifica unicamente uma linha (grão inclui rede/serie quando existem)
 CHAVES_PRIMARIAS = {
-    "municipio": ["id_municipio"],
-    "uf": ["sigla_uf"],
-    "meta_municipio": ["id_municipio", "ano"],
-    "meta_uf": ["sigla_uf", "ano"],
-    "alunos": ["id_aluno", "ano"],
+    "uf":                          ["sigla_uf", "ano", "rede", "serie"],
+    "municipio":                   ["id_municipio", "ano", "rede", "serie"],
+    "meta_alfabetizacao_brasil":   ["ano", "rede"],
+    "meta_alfabetizacao_uf":       ["sigla_uf", "ano", "rede"],
+    "meta_alfabetizacao_municipio":["id_municipio", "ano", "rede"],
+    "alunos":                      ["id_aluno", "ano"],
 }
 
 # Faixas válidas para validação de consistência
