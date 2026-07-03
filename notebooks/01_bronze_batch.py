@@ -14,7 +14,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install basedosdados
+# MAGIC %pip install basedosdados "numpy<2"
 # MAGIC %restart_python
 
 # COMMAND ----------
