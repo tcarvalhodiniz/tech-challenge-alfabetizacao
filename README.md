@@ -137,10 +137,12 @@ Fluxo completo, com as transformações de cada camada, em
 
 ## 8. Decisões arquiteturais (trade-offs)
 
-- **Batch vs Streaming** — metas e cadastros mudam pouco → **batch**; medições novas do
-  indicador precisam de baixa latência → **streaming**. Adotamos os dois (híbrido).
-- **Data Lake vs Data Warehouse** — usamos **Lakehouse**: dados brutos/tratados em Delta
-  no lake (flexível e barato) e a Gold também no **BigQuery** (governança e performance de BI).
+- **Batch vs Streaming** — metas e cadastros mudam pouco, então entram por **batch**; as
+  medições novas do indicador pedem baixa latência, então entram por **streaming**. Daí o
+  desenho ser híbrido, com os dois.
+- **Data Lake vs Data Warehouse** — a opção foi um **Lakehouse**: os dados brutos e tratados
+  ficam em Delta no lake (flexível e barato) e a Gold vai também pro **BigQuery** (governança
+  e performance pra BI).
 - **Custo vs Performance** — Parquet + particionamento reduzem I/O; BigQuery cobra por
   dados lidos, então otimização de queries e partições impacta diretamente o custo.
 
@@ -173,9 +175,8 @@ tech-challenge-alfabetizacao/
 
 ---
 
-## 👤 Autores
+## 👤 Autor
 
 **Thiago Corrêa Carvalho Diniz** — RM 371212
-_(demais integrantes do grupo)_
 
 Pós-Graduação AI Scientist — FIAP

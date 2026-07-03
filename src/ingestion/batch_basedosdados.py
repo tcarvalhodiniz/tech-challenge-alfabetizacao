@@ -15,9 +15,9 @@ def ler_tabela_bd(dataset_id: str, table_id: str, billing_project_id: str, limit
     Lê uma tabela da Base dos Dados (dataset público no BigQuery) como pandas DataFrame.
 
     Autentica pela service account definida em `GOOGLE_APPLICATION_CREDENTIALS`;
-    `billing_project_id` é o projeto que paga a execução da query. Usamos o cliente
-    oficial do BigQuery em vez do `basedosdados.read_sql`, que força um fluxo de
-    login interativo (navegador) inviável em ambiente de servidor como o Databricks.
+    `billing_project_id` é o projeto que paga a execução da query. A leitura vai pelo
+    cliente oficial do BigQuery, e não pelo `basedosdados.read_sql`, que força um fluxo
+    de login interativo (navegador) inviável num servidor como o Databricks.
 
     `limite` é útil em desenvolvimento para não baixar microdados inteiros (ex.: `alunos`).
     """

@@ -6,8 +6,8 @@ Simula a chegada, em tempo quase-real, de medições do indicador de alfabetiza�
 como um arquivo JSON (NDJSON) na pasta de landing; o job de Structured Streaming
 (`streaming_bronze.py`) consome esses arquivos incrementalmente.
 
-Mantido como Python puro (sem Spark) para funcionar como um "produtor" à parte —
-inclusive rodando em paralelo ao consumidor, como uma fila/tópico real faria.
+É Python puro (sem Spark) de propósito, pra rodar como um "produtor" à parte —
+inclusive em paralelo ao consumidor, como uma fila/tópico de verdade faria.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import uuid
 from datetime import datetime
 
 # Amostra de municípios reais (código IBGE de 7 dígitos + UF) para dar realismo aos
-# eventos. Em produção, essa medição chegaria de um tópico Kafka / fila de eventos.
+# eventos. Em produção, essa medição chegaria de um tópico Pub/Sub / fila de eventos.
 MUNICIPIOS_AMOSTRA = [
     ("3550308", "SP"),  # São Paulo
     ("3304557", "RJ"),  # Rio de Janeiro

@@ -50,8 +50,8 @@ print("Dataset:", f"{settings.BD_PROJECT}.{settings.DATASET_ID}")
 # MAGIC %md
 # MAGIC ## Ingestão das tabelas
 # MAGIC
-# MAGIC `alunos` são microdados (volumoso) — em desenvolvimento usamos um `LIMIT` para
-# MAGIC agilizar; em produção, remover o limite.
+# MAGIC `alunos` são microdados (volumoso) — no desenvolvimento fica com um `LIMIT` pra
+# MAGIC agilizar; em produção, é só tirar o limite.
 
 # COMMAND ----------
 

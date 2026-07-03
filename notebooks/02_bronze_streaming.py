@@ -80,7 +80,7 @@ print(f"\n{len(arquivos)} arquivos de eventos gerados.")
 # MAGIC ## 2. Consumidor — Structured Streaming → Bronze
 # MAGIC
 # MAGIC `availableNow=True`: processa todos os eventos já disponíveis e encerra
-# MAGIC (prático para validar no notebook). Para simular o fluxo contínuo, troque para
+# MAGIC (bom pra validar no notebook). Pra simular o fluxo contínuo, troque para
 # MAGIC `continuo=True` e deixe a célula rodando enquanto o produtor gera mais lotes.
 
 # COMMAND ----------
