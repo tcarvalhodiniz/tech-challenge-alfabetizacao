@@ -28,6 +28,7 @@ PATHS = {
     "quarentena": f"{BASE_PATH}/quarentena",
     "streaming_in": f"{BASE_PATH}/streaming/eventos",       # landing dos eventos
     "streaming_ckpt": f"{BASE_PATH}/streaming/_checkpoints",  # checkpoints do Spark
+    "bronze_indicador": f"{BASE_PATH}/bronze/indicador_streaming",  # Bronze dos eventos (streaming)
 }
 
 # ---------------------------------------------------------------------------
