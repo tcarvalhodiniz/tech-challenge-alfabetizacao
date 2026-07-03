@@ -75,11 +75,53 @@ Meta Alfabetização por Município · Município · Dados de alunos.
 
 ## 5. Diagrama da pipeline
 
-> _A ser incluído — ver `docs/diagrama.svg` (Passo 2)._
+```mermaid
+flowchart TB
+    subgraph Fontes["Fontes de dados"]
+        BD["Base dos Dados / BigQuery<br/>UF - Municipio - Metas - Alunos"]
+        EV["Eventos do indicador<br/>novas medicoes / metas"]
+    end
+
+    subgraph Ingestao["Ingestao hibrida"]
+        BATCH["Ingestao Batch<br/>PySpark"]
+        PROD["Produtor Python"]
+        PS["Pub/Sub"]
+        STREAM["Structured Streaming"]
+        PROD --> PS --> STREAM
+    end
+
+    subgraph Lakehouse["Lakehouse - Arquitetura Medalhao (Delta Lake)"]
+        BRONZE["BRONZE<br/>bruto + metadados"]
+        SILVER["SILVER<br/>limpeza - qualidade<br/>integracao das 6 bases"]
+        GOLD["GOLD<br/>indicador por municipio<br/>meta x realizado - evolucao"]
+        QUAR["Quarentena<br/>registros invalidos"]
+    end
+
+    subgraph Consumo["Consumo - GCP"]
+        BQ["BigQuery"]
+        LOOKER["Looker Studio"]
+    end
+
+    BD --> BATCH --> BRONZE
+    EV --> PROD
+    STREAM --> BRONZE
+    BRONZE --> SILVER
+    SILVER -. invalidos .-> QUAR
+    SILVER --> GOLD
+    GOLD --> BQ --> LOOKER
+```
+
+Detalhes e mapeamento para serviços GCP em [`docs/arquitetura.md`](docs/arquitetura.md).
 
 ## 6. Fluxo de dados
 
-> _A ser detalhado — ver `docs/fluxo-de-dados.md` (Passo 2)._
+**Extração** (Base dos Dados + eventos) → **Bronze** (bruto + metadados) → **Silver**
+(limpeza, qualidade, normalização de chaves e integração das 6 bases; inválidos vão para
+quarentena) → **Gold** (indicador por município, meta × realizado, evolução temporal) →
+**Consumo** (BigQuery + Looker Studio).
+
+Fluxo completo, com as transformações de cada camada, em
+[`docs/fluxo-de-dados.md`](docs/fluxo-de-dados.md).
 
 ## 7. Tecnologias utilizadas
 
