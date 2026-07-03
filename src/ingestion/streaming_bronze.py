@@ -15,8 +15,8 @@ def schema_eventos() -> T.StructType:
     """
     Schema explícito dos eventos.
 
-    Em streaming evitamos inferência de schema (custosa e não determinística):
-    o contrato dos eventos é fixado aqui.
+    Em streaming a inferência de schema sai cara e imprevisível, então o contrato
+    dos eventos fica fixado aqui.
     """
     return T.StructType(
         [
@@ -45,7 +45,7 @@ def iniciar_stream_bronze(
     em Delta em `destino`, com checkpoint em `checkpoint`. Retorna a `StreamingQuery`.
 
     - `continuo=False` (padrão): `trigger(availableNow=True)` — processa tudo o que já
-      chegou e encerra sozinho (ideal para rodar e validar no notebook).
+      chegou e encerra sozinho (bom pra rodar e validar no notebook).
     - `continuo=True`: micro-batches a cada 10s, roda indefinidamente (demonstra o
       near-real-time; interrompa a célula para parar).
 

@@ -2,8 +2,8 @@
 Configuração central do pipeline de alfabetização.
 
 Um único lugar para caminhos, parâmetros de qualidade e identificadores das
-fontes. Trocando AMBIENTE de "databricks" para "gcp" o pipeline aponta das
-Volumes do Databricks para os buckets do GCS, sem alterar a lógica.
+fontes. Ao trocar AMBIENTE de "databricks" pra "gcp", o pipeline passa a apontar dos
+Volumes do Databricks pros buckets do GCS, sem mudar a logica.
 """
 
 import os
