@@ -12,16 +12,25 @@ from pyspark.sql import functions as F
 
 def ler_tabela_bd(dataset_id: str, table_id: str, billing_project_id: str, limite: int | None = None):
     """
-    Lê uma tabela da Base dos Dados (BigQuery) como pandas DataFrame.
+    Lê uma tabela da Base dos Dados (dataset público no BigQuery) como pandas DataFrame.
+
+    Autentica pela service account definida em `GOOGLE_APPLICATION_CREDENTIALS`;
+    `billing_project_id` é o projeto que paga a execução da query. Usamos o cliente
+    oficial do BigQuery em vez do `basedosdados.read_sql`, que força um fluxo de
+    login interativo (navegador) inviável em ambiente de servidor como o Databricks.
 
     `limite` é útil em desenvolvimento para não baixar microdados inteiros (ex.: `alunos`).
     """
-    import basedosdados as bd
+    from google.cloud import bigquery
 
     query = f"SELECT * FROM `basedosdados.{dataset_id}.{table_id}`"
     if limite:
         query += f" LIMIT {limite}"
-    return bd.read_sql(query=query, billing_project_id=billing_project_id)
+
+    client = bigquery.Client(project=billing_project_id)
+    # create_bqstorage_client=False força o download via API REST, evitando exigir
+    # a permissão extra do BigQuery Storage na service account (que tem papel mínimo).
+    return client.query(query).to_dataframe(create_bqstorage_client=False)
 
 
 def gravar_bronze(spark: SparkSession, pdf, fonte: str, destino: str) -> int:
