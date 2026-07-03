@@ -18,7 +18,7 @@ flowchart TB
     subgraph Ingestao["Ingestao hibrida"]
         BATCH["Ingestao Batch<br/>PySpark"]
         PROD["Produtor Python"]
-        PS["Pub/Sub"]
+        PS["Landing de eventos<br/>Pub/Sub em producao"]
         STREAM["Structured Streaming"]
         PROD --> PS --> STREAM
     end

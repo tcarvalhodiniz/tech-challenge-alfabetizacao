@@ -57,8 +57,9 @@ Meta Alfabetização por Município · Município · Dados de alunos.
 
 **Ingestão híbrida:**
 - **Batch** — dados históricos de metas, municípios e agregados nacionais (Base dos Dados).
-- **Streaming** — simulação de eventos quase-real-time (novas medições do indicador,
-  atualização de metas/resultados) via produtor Python → Pub/Sub → Structured Streaming.
+- **Streaming** — eventos quase-real-time (novas medições do indicador) via produtor
+  Python → landing de arquivos → Structured Streaming. No Databricks o transporte é uma
+  pasta de eventos (arquivos); na nuvem, o equivalente seria o **Pub/Sub**.
 
 ## 4. Descrição da arquitetura da solução
 
@@ -67,8 +68,9 @@ Meta Alfabetização por Município · Município · Dados de alunos.
 
 - **Fonte:** Base dos Dados (BigQuery público), acessada via pacote `basedosdados`.
 - **Bronze:** notebooks PySpark gravam os dados brutos particionados por data de ingestão.
-- **Streaming:** produtor Python publica eventos em Pub/Sub; Structured Streaming
-  consome e grava na Bronze de streaming.
+- **Streaming:** produtor Python grava eventos (NDJSON) numa landing; o Structured
+  Streaming consome incrementalmente, com checkpoint, e grava na Bronze de streaming.
+  Em produção na nuvem esse transporte vira **Pub/Sub**.
 - **Silver:** limpeza + regras de qualidade + join das bases por `id_municipio` / `sigla_uf` / `ano`.
 - **Gold:** tabelas analíticas em Delta, exportadas para **BigQuery** (serverless).
 - **Consumo:** dashboard no **Looker Studio** sobre o BigQuery.
@@ -85,7 +87,7 @@ flowchart TB
     subgraph Ingestao["Ingestao hibrida"]
         BATCH["Ingestao Batch<br/>PySpark"]
         PROD["Produtor Python"]
-        PS["Pub/Sub"]
+        PS["Landing de eventos<br/>Pub/Sub em producao"]
         STREAM["Structured Streaming"]
         PROD --> PS --> STREAM
     end
