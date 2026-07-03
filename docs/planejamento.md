@@ -29,7 +29,7 @@ Município · Município · Dados de alunos.
 |---|-------|--------|
 | 1 | Estrutura do repositório + Git | ✅ Concluído |
 | 2 | Diagrama da arquitetura + fluxo de dados | ✅ Concluído |
-| 3 | Ingestão Batch → Bronze (Base dos Dados) | ⬜ A fazer |
+| 3 | Ingestão Batch → Bronze (Base dos Dados) | ✅ Concluído |
 | 4 | Ingestão Streaming → Bronze (produtor + Structured Streaming) | ⬜ A fazer |
 | 5 | Camada Silver (limpeza + integração das bases) | ⬜ A fazer |
 | 6 | Regras de qualidade + quarentena | ⬜ A fazer |
