@@ -33,7 +33,7 @@ Município · Município · Dados de alunos.
 | 4 | Ingestão Streaming → Bronze (produtor + Structured Streaming) | ✅ Concluído |
 | 5 | Camada Silver (limpeza + integração das bases) | ✅ Concluído |
 | 6 | Regras de qualidade + quarentena | ✅ Concluído |
-| 7 | Camada Gold + export BigQuery | ⬜ A fazer |
+| 7 | Camada Gold + export BigQuery | ✅ Concluído |
 | 8 | FinOps (particionamento + estimativa de custo) | ⬜ A fazer |
 | 9 | README final + seção Aplicação em IA | ⬜ A fazer |
 | 10 | Dashboard (Looker Studio) + roteiro do vídeo | ⬜ A fazer |
