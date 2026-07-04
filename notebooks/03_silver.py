@@ -23,6 +23,11 @@ while _raiz != "/" and not os.path.isdir(os.path.join(_raiz, "config")):
 sys.path.insert(0, _raiz)
 sys.path.append("..")
 
+# Remove os módulos do repo que já estejam em cache, pra que um `git pull` recente
+# passe a valer sem precisar reiniciar o Python (o import não recarrega sozinho).
+for _m in [m for m in list(sys.modules) if m == "config" or m.startswith(("config.", "src."))]:
+    del sys.modules[_m]
+
 from config import settings
 from src.transformations import silver_clean as clean
 from src.transformations import silver_metas as metas
