@@ -62,11 +62,17 @@ uf        = preparar("uf")
 municipio = preparar("municipio")
 alunos    = preparar("alunos")
 
-# metas: limpa, decodifica rede e despivota (largo -> longo)
+# metas: limpa e despivota (largo -> longo). Nas tabelas de meta, `rede` já vem como
+# texto (ex.: "Municipal", "Pública") em vez de codigo -- nao ha o que decodificar
+# aqui, diferente das tabelas de resultado (uf/municipio).
 def preparar_meta(nome):
-    df = clean.decodificar(clean.limpar(ler_bronze(nome)), dicionario, "rede")
+    df = clean.limpar(ler_bronze(nome))
     return metas.despivotar_metas(df, settings.COLUNAS_META)
 
+# meta_uf/meta_brasil trazem rede = "Pública", que nao tem correspondencia textual
+# exata com nenhum rede_desc de uf ("Pública (Estadual e Municipal)" ou "Pública
+# (Federal, Estadual e Municipal)"). Ainda nao integramos uf/brasil com suas metas
+# por causa disso -- decidir esse de-para quando construirmos a Gold por UF/Brasil.
 meta_brasil    = preparar_meta("meta_alfabetizacao_brasil")
 meta_uf        = preparar_meta("meta_alfabetizacao_uf")
 meta_municipio = preparar_meta("meta_alfabetizacao_municipio")
