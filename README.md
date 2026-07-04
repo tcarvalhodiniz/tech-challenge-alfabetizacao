@@ -158,8 +158,32 @@ do BigQuery: a **ingestão completa processa ≈ 272 MB → US$ 0,0017 por execu
 
 ## 10. Aplicação em IA
 
-> _A ser detalhado (Passo 9): predição de alfabetização por município, análise de
-> desigualdade educacional e políticas públicas baseadas em dados._
+O desafio pede para **explicar** (não construir) como a camada Gold habilita aplicações de
+IA/ML. Como a Gold já entrega o indicador por município, a comparação meta × realizado e a
+série temporal, ela funciona como uma base de *features* pronta para alguns usos:
+
+**a) Prever quais municípios estão em risco de não bater a meta de 2030.**
+Um modelo de classificação (ex.: gradient boosting) usaria como features a `taxa_realizada`
+atual, o `gap_pp`, a tendência vinda de `evolucao_municipio`, a UF/região e a rede. A saída —
+"no caminho" vs "em risco" — permite **priorizar política pública** e agir antes, onde é mais
+necessário.
+
+**b) Projetar a taxa de alfabetização em 2030 por município.**
+Uma regressão (ou um modelo de série temporal) sobre o histórico realizado + a trajetória de
+metas estima a taxa futura e mostra o esforço necessário para fechar o gap.
+
+**c) Agrupar municípios por perfil de trajetória (clustering).**
+K-means/DBSCAN sobre as curvas de evolução separam grupos como "já atingiram", "avançando
+rápido" e "estagnados", permitindo desenhar estratégias por grupo em vez de caso a caso.
+
+**d) Alertas near-real-time.**
+A tabela `indicador_stream_recente`, alimentada pela ingestão de streaming, permitiria
+disparar **alertas automáticos** quando uma nova medição apontasse queda relevante do
+indicador — sem esperar o ciclo batch anual.
+
+Em produção, esses modelos seriam treinados fora da Gold (Databricks ML / Vertex AI),
+consumindo-a como *feature store*, e devolveriam os scores para o próprio BigQuery, fechando
+o ciclo **dados → modelo → decisão**.
 
 ## 11. Estrutura do repositório
 
@@ -168,16 +192,36 @@ tech-challenge-alfabetizacao/
 ├── config/            # configuração central (caminhos, fontes, regras de qualidade)
 ├── notebooks/         # notebooks Databricks (bronze, streaming, silver, gold)
 ├── src/
-│   ├── ingestion/     # ingestão batch (Base dos Dados) e produtor de streaming
-│   ├── quality/       # scripts de validação e qualidade de dados
-│   └── transformations/  # lógica de Silver e Gold
+│   ├── ingestion/        # ingestão batch (Base dos Dados) + produtor de streaming
+│   ├── transformations/  # lógica de Silver e Gold
+│   ├── quality/          # regras de qualidade + quarentena
+│   └── export/           # publicação da Gold no BigQuery
 ├── docs/              # arquitetura, fluxo de dados, FinOps, diagrama
 └── data/              # camadas locais para dev (não versionado)
 ```
 
 ## 12. Como executar
 
-> _A ser detalhado conforme os notebooks forem construídos._
+**Pré-requisitos**
+- Projeto GCP com BigQuery habilitado e uma *service account* (papéis BigQuery User + Job
+  User); a chave JSON fica fora do repositório.
+- Databricks Free Edition com o Volume `workspace.default.alfabetizacao` e a chave da service
+  account enviada para o Volume.
+
+**Pipeline — notebooks Databricks, nesta ordem**
+1. `01_bronze_batch` — ingestão batch das 7 fontes (Base dos Dados/BigQuery) → Bronze.
+2. `02_bronze_streaming` — produtor de eventos + Structured Streaming → Bronze.
+3. `03_silver` — limpeza, normalização de chaves, decodificação e integração → Silver.
+4. `04_quality` — regras de qualidade + quarentena.
+5. `05_gold` — datasets analíticos → Gold.
+
+**Publicação e consumo**
+- `python -m src.export.publish_bigquery` publica a Gold no dataset `alfabetizacao_gold`
+  (BigQuery). Alternativa: a célula de export do `05_gold` (conector `spark-bigquery`).
+- Dashboard: Looker Studio conectado ao dataset `alfabetizacao_gold`.
+
+O `config/settings.py` centraliza caminhos e parâmetros; a variável de ambiente `GCP_PROJECT`
+define o projeto que paga as consultas no BigQuery.
 
 ---
 

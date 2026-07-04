@@ -35,7 +35,7 @@ Município · Município · Dados de alunos.
 | 6 | Regras de qualidade + quarentena | ✅ Concluído |
 | 7 | Camada Gold + export BigQuery | ✅ Concluído |
 | 8 | FinOps (particionamento + estimativa de custo) | ✅ Concluído |
-| 9 | README final + seção Aplicação em IA | ⬜ A fazer |
+| 9 | README final + seção Aplicação em IA | ✅ Concluído |
 | 10 | Dashboard (Looker Studio) + roteiro do vídeo | ⬜ A fazer |
 
 ## Fluxo de trabalho (Git)
