@@ -31,7 +31,7 @@ Município · Município · Dados de alunos.
 | 2 | Diagrama da arquitetura + fluxo de dados | ✅ Concluído |
 | 3 | Ingestão Batch → Bronze (Base dos Dados) | ✅ Concluído |
 | 4 | Ingestão Streaming → Bronze (produtor + Structured Streaming) | ✅ Concluído |
-| 5 | Camada Silver (limpeza + integração das bases) | ⬜ A fazer |
+| 5 | Camada Silver (limpeza + integração das bases) | ✅ Concluído |
 | 6 | Regras de qualidade + quarentena | ⬜ A fazer |
 | 7 | Camada Gold + export BigQuery | ⬜ A fazer |
 | 8 | FinOps (particionamento + estimativa de custo) | ⬜ A fazer |
