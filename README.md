@@ -148,9 +148,13 @@ Fluxo completo, com as transformações de cada camada, em
 - **Custo vs Performance** — Parquet + particionamento reduzem I/O; BigQuery cobra por
   dados lidos, então otimização de queries e partições impacta diretamente o custo.
 
-## 9. Monitoramento e FinOps
+## 9. FinOps
 
-> _A ser detalhado (Passos 6 e 8) — ver `docs/finops.md`._
+Delta/Parquet (colunar + comprimido) em todas as camadas, particionamento por `ano` e
+projeção de colunas para ler só o necessário. O custo foi medido de verdade com o *dry-run*
+do BigQuery: a **ingestão completa processa ≈ 272 MB → US$ 0,0017 por execução** (0,027% do
+1 TB/mês grátis). Detalhes, otimizações e a tabela de custo por fonte em
+[`docs/finops.md`](docs/finops.md).
 
 ## 10. Aplicação em IA
 
