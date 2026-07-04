@@ -57,10 +57,12 @@ print("Silver:", SILVER)
 dicionario = ler_bronze("dicionario")
 
 def preparar(nome):
-    """Limpeza padrão + decodificação de rede/serie de uma tabela batch."""
+    """Limpeza + decodificação de rede/serie + rótulo genérico para dimensão nula."""
     df = clean.limpar(ler_bronze(nome))
     df = clean.decodificar(df, dicionario, "rede")
     df = clean.decodificar(df, dicionario, "serie")
+    # dimensões categóricas nulas ganham rótulo genérico (medidas numéricas ficam null)
+    df = clean.preencher_categoria_nula(df, ["rede_desc", "serie_desc"])
     return df
 
 uf        = preparar("uf")

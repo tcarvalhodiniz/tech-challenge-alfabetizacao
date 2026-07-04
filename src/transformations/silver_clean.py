@@ -40,6 +40,20 @@ def descartar_metadados(df: DataFrame) -> DataFrame:
     return df.drop(*[m for m in _METADADOS_BRONZE if m in df.columns])
 
 
+def preencher_categoria_nula(df: DataFrame, colunas: list[str], rotulo: str = "Não informado") -> DataFrame:
+    """
+    Preenche dimensões categóricas nulas com um rótulo genérico.
+
+    Vale só para colunas de categoria (ex.: `rede_desc`, `serie_desc`) — mantém a
+    dimensão usável no BI, sem "perder" linhas ao agrupar. Medidas numéricas NÃO devem
+    passar por aqui (null numérico é ausência de medição, não uma categoria).
+    """
+    for c in colunas:
+        if c in df.columns:
+            df = df.withColumn(c, F.coalesce(F.col(c).cast("string"), F.lit(rotulo)))
+    return df
+
+
 def decodificar(df: DataFrame, dicionario: DataFrame, coluna: str, id_tabela: str | None = None) -> DataFrame:
     """
     Traduz os códigos de uma coluna categórica (ex.: `rede`, `serie`) para a
