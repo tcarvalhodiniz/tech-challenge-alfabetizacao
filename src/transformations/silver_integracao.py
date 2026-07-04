@@ -29,14 +29,29 @@ def integrar_indicador_municipio(municipio: DataFrame, meta_muni_long: DataFrame
     """
     Integra o realizado (tabela `municipio`) com as metas municipais despivotadas.
 
-    Join por `id_municipio` + `ano` + `rede` (a meta não tem `serie`; ela vale para
+    `municipio` traz `rede` como código (ex.: "3") e precisa já ter passado por
+    `silver_clean.decodificar(..., "rede")`, que adiciona `rede_desc` (ex.: "Municipal").
+    A tabela de metas municipais, diferente da de resultados, já vem com `rede` como
+    texto (`"Municipal"`) — é a única rede para a qual a meta municipal é publicada.
+    Por isso o join usa `rede_desc` (município) == `rede` (meta), e não o código bruto.
+
+    Join por `id_municipio` + `ano` + rede (a meta não tem `serie`; ela vale para
     o município/ano/rede). O resultado é uma linha por município × ano × rede × serie
     × ano-meta, com o realizado e a meta lado a lado, e a `sigla_uf`.
     """
     metas = meta_muni_long.select(
-        "id_municipio", "ano", "rede",
+        F.col("id_municipio").alias("_meta_id_municipio"),
+        F.col("ano").alias("_meta_ano"),
+        F.col("rede").alias("_meta_rede_desc"),
         F.col("ano_meta"),
         F.col("valor_meta").alias("meta_taxa_alfabetizacao"),
     )
-    integrado = municipio.join(metas, on=["id_municipio", "ano", "rede"], how="left")
+    condicao = (
+        (municipio["id_municipio"] == metas["_meta_id_municipio"])
+        & (municipio["ano"] == metas["_meta_ano"])
+        & (municipio["rede_desc"] == metas["_meta_rede_desc"])
+    )
+    integrado = municipio.join(metas, condicao, "left").drop(
+        "_meta_id_municipio", "_meta_ano", "_meta_rede_desc"
+    )
     return adicionar_sigla_uf(integrado)
