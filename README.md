@@ -6,6 +6,8 @@ Pipeline de dados híbrida (**Batch + Streaming**) em nuvem que integra as fonte
 (Bronze → Silver → Gold)**, com foco em qualidade, escalabilidade e eficiência de
 custos (FinOps).
 
+📊 **Dashboard (Looker Studio):** https://datastudio.google.com/reporting/98ab3664-b93d-46d5-a597-1cc1dbb26f27
+
 ---
 
 ## 1. Contexto do problema
@@ -73,7 +75,7 @@ Meta Alfabetização por Município · Município · Dados de alunos.
   Em produção na nuvem esse transporte vira **Pub/Sub**.
 - **Silver:** limpeza + regras de qualidade + join das bases por `id_municipio` / `sigla_uf` / `ano`.
 - **Gold:** tabelas analíticas em Delta, exportadas para **BigQuery** (serverless).
-- **Consumo:** dashboard no **Looker Studio** sobre o BigQuery.
+- **Consumo:** [dashboard no **Looker Studio**](https://datastudio.google.com/reporting/98ab3664-b93d-46d5-a597-1cc1dbb26f27) sobre o BigQuery (público, sem login).
 
 ## 5. Diagrama da pipeline
 
