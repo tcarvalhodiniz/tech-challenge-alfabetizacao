@@ -198,9 +198,13 @@ tech-challenge-alfabetizacao/
 │   ├── transformations/  # lógica de Silver e Gold
 │   ├── quality/          # regras de qualidade + quarentena
 │   └── export/           # publicação da Gold no BigQuery
-├── docs/              # arquitetura, fluxo de dados, FinOps, diagrama
+├── docs/
+│   └── evidencias/    # prints da pipeline rodando (bronze, silver, gold, BigQuery, dashboard)
 └── data/              # camadas locais para dev (não versionado)
 ```
+
+📸 Prints da execução completa (Databricks + BigQuery + Looker Studio) em
+[`docs/evidencias/`](docs/evidencias/).
 
 ## 12. Como executar
 
