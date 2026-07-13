@@ -7,6 +7,8 @@ Pipeline de dados híbrida (**Batch + Streaming**) em nuvem que integra as fonte
 custos (FinOps).
 
 📊 **Dashboard (Looker Studio):** https://datastudio.google.com/reporting/98ab3664-b93d-46d5-a597-1cc1dbb26f27
+🎥 **Vídeo executivo:** [Loom](https://www.loom.com/share/74bcf992c22640f190403206b62e704b) · também em [`docs/video-executivo.mp4`](docs/video-executivo.mp4)
+📑 **Apresentação:** [`docs/apresentacao.pptx`](docs/apresentacao.pptx)
 
 ---
 
