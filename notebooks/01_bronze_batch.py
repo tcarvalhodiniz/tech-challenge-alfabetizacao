@@ -2,15 +2,8 @@
 # MAGIC %md
 # MAGIC # 01 — Ingestão Batch → Bronze
 # MAGIC
-# MAGIC Lê as tabelas do dataset `basedosdados.br_inep_avaliacao_alfabetizacao` (BigQuery)
-# MAGIC e grava na camada **Bronze** em Delta, sem regras de negócio — apenas com
-# MAGIC metadados de ingestão e particionamento por data.
-# MAGIC
-# MAGIC **Pré-requisitos:**
-# MAGIC 1. Criar o Volume `workspace.default.alfabetizacao` (Catalog → Create → Volume).
-# MAGIC 2. Um projeto GCP com BigQuery habilitado (billing) e credenciais disponíveis no
-# MAGIC    cluster (`GOOGLE_APPLICATION_CREDENTIALS` apontando para a chave da service account).
-# MAGIC 3. Ajustar `BILLING_PROJECT_ID` abaixo.
+# MAGIC Lê as 7 tabelas do dataset `basedosdados.br_inep_avaliacao_alfabetizacao` (as 6 entidades + o dicionário)
+# MAGIC e grava na Bronze em Delta. Pré-req: Volume `alfabetizacao`, chave da service account no Volume e `BILLING_PROJECT_ID` no settings.
 
 # COMMAND ----------
 
@@ -22,16 +15,13 @@
 import os
 import sys
 
-# Torna os módulos do repositório (config/, src/) importáveis. Sobe a partir da pasta
-# atual até achar a raiz do projeto — funciona tanto em Git folder (/Workspace/Users/...)
-# quanto em Repo legado, sem depender de um caminho fixo.
+# raiz do repo no sys.path (sobe até achar config/)
 _raiz = os.getcwd()
 while _raiz != "/" and not os.path.isdir(os.path.join(_raiz, "config")):
     _raiz = os.path.dirname(_raiz)
 sys.path.insert(0, _raiz)
-sys.path.append("..")  # fallback: notebook executado a partir de notebooks/
+sys.path.append("..")
 
-# Credencial da service account, enviada para o Volume `alfabetizacao`.
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
     "/Volumes/workspace/default/alfabetizacao/tech-challenge-fiap-501217-170d3c25c0e2.json"
 )
@@ -39,7 +29,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
 from config import settings
 from src.ingestion.batch_basedosdados import ingerir_batch
 
-BILLING_PROJECT_ID = settings.BILLING_PROJECT_ID  # ajuste em config/settings.py ou variável de ambiente
+BILLING_PROJECT_ID = settings.BILLING_PROJECT_ID
 BRONZE = settings.PATHS["bronze"]
 
 print("Destino Bronze:", BRONZE)
@@ -49,14 +39,11 @@ print("Dataset:", f"{settings.BD_PROJECT}.{settings.DATASET_ID}")
 
 # MAGIC %md
 # MAGIC ## Ingestão das tabelas
-# MAGIC
-# MAGIC `alunos` são microdados (volumoso) — no desenvolvimento fica com um `LIMIT` pra
-# MAGIC agilizar; em produção, é só tirar o limite.
+# MAGIC `alunos` (microdados) fica com `LIMIT` em dev; em produção, sem limite.
 
 # COMMAND ----------
 
-# limite por tabela (None = tabela inteira). Ajuste conforme o ambiente.
-LIMITES = {"alunos": 100_000}
+LIMITES = {"alunos": 100_000}  # None = tabela inteira
 
 resultados = []
 for table_id in settings.TABELAS_BATCH:
@@ -75,9 +62,7 @@ for table_id in settings.TABELAS_BATCH:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Validação da Bronze
-# MAGIC
-# MAGIC Confirma que cada tabela foi gravada, com os metadados de ingestão.
+# MAGIC ## Validação
 
 # COMMAND ----------
 
@@ -85,7 +70,7 @@ display(spark.createDataFrame(resultados))
 
 # COMMAND ----------
 
-# amostra de uma tabela para conferência do schema e dos metadados
+# amostra para conferir schema e metadados
 df_municipio = spark.read.format("delta").load(f"{BRONZE}/municipio")
 df_municipio.printSchema()
 display(df_municipio.limit(10))

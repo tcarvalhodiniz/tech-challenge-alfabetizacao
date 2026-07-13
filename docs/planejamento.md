@@ -36,7 +36,7 @@ Município · Município · Dados de alunos.
 | 7 | Camada Gold + export BigQuery | ✅ Concluído |
 | 8 | FinOps (particionamento + estimativa de custo) | ✅ Concluído |
 | 9 | README final + seção Aplicação em IA | ✅ Concluído |
-| 10 | Dashboard (Looker Studio) + roteiro do vídeo | ⬜ A fazer |
+| 10 | Dashboard (Looker Studio) + roteiro do vídeo | ✅ Concluído |
 
 ## Fluxo de trabalho (Git)
 

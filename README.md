@@ -39,14 +39,14 @@ camada analítica confiável que permita responder perguntas como:
 - Como o indicador **evolui ao longo do tempo** rumo à meta de 2030?
 - Onde estão as maiores **desigualdades educacionais** entre regiões?
 
-A camada Gold resultante alimenta dashboards, análises estatísticas e, futuramente,
+A camada Gold alimenta dashboards, análises estatísticas e, futuramente,
 modelos de Machine Learning (ver seção *Aplicação em IA*).
 
 **Fonte de dados:** [Indicador Criança Alfabetizada – Base dos Dados](https://basedosdados.org/).
 
 ## 3. Arquitetura proposta
 
-Arquitetura **Lakehouse** com ingestão híbrida e camadas medalhão:
+Arquitetura com ingestão híbrida e camadas medalhão:
 
 | Camada | Papel | Formato |
 |--------|-------|---------|
@@ -60,8 +60,7 @@ Meta Alfabetização por Município · Município · Dados de alunos.
 **Ingestão híbrida:**
 - **Batch** — dados históricos de metas, municípios e agregados nacionais (Base dos Dados).
 - **Streaming** — eventos quase-real-time (novas medições do indicador) via produtor
-  Python → landing de arquivos → Structured Streaming. No Databricks o transporte é uma
-  pasta de eventos (arquivos); na nuvem, o equivalente seria o **Pub/Sub**.
+  Python e Structured Streaming.
 
 ## 4. Descrição da arquitetura da solução
 
@@ -74,48 +73,13 @@ Meta Alfabetização por Município · Município · Dados de alunos.
   Streaming consome incrementalmente, com checkpoint, e grava na Bronze de streaming.
   Em produção na nuvem esse transporte vira **Pub/Sub**.
 - **Silver:** limpeza + regras de qualidade + join das bases por `id_municipio` / `sigla_uf` / `ano`.
-- **Gold:** tabelas analíticas em Delta, exportadas para **BigQuery** (serverless).
-- **Consumo:** [dashboard no **Looker Studio**](https://datastudio.google.com/reporting/98ab3664-b93d-46d5-a597-1cc1dbb26f27) sobre o BigQuery (público, sem login).
+- **Gold:** tabelas analíticas em Delta, exportadas para **BigQuery**.
+- **Consumo:** [dashboard no **Looker Studio**](https://datastudio.google.com/reporting/98ab3664-b93d-46d5-a597-1cc1dbb26f27) sobre o BigQuery.
 
-## 5. Diagrama da pipeline
-
-```mermaid
-flowchart TB
-    subgraph Fontes["Fontes de dados"]
-        BD["Base dos Dados / BigQuery<br/>UF - Municipio - Metas - Alunos"]
-        EV["Eventos do indicador<br/>novas medicoes / metas"]
-    end
-
-    subgraph Ingestao["Ingestao hibrida"]
-        BATCH["Ingestao Batch<br/>PySpark"]
-        PROD["Produtor Python"]
-        PS["Landing de eventos<br/>Pub/Sub em producao"]
-        STREAM["Structured Streaming"]
-        PROD --> PS --> STREAM
-    end
-
-    subgraph Lakehouse["Lakehouse - Arquitetura Medalhao (Delta Lake)"]
-        BRONZE["BRONZE<br/>bruto + metadados"]
-        SILVER["SILVER<br/>limpeza - qualidade<br/>integracao das 6 bases"]
-        GOLD["GOLD<br/>indicador por municipio<br/>meta x realizado - evolucao"]
-        QUAR["Quarentena<br/>registros invalidos"]
-    end
-
-    subgraph Consumo["Consumo - GCP"]
-        BQ["BigQuery"]
-        LOOKER["Looker Studio"]
-    end
-
-    BD --> BATCH --> BRONZE
-    EV --> PROD
-    STREAM --> BRONZE
-    BRONZE --> SILVER
-    SILVER -. invalidos .-> QUAR
-    SILVER --> GOLD
-    GOLD --> BQ --> LOOKER
-```
+## 5. Arquitetura
 
 Detalhes e mapeamento para serviços GCP em [`docs/arquitetura.md`](docs/arquitetura.md).
+
 
 ## 6. Fluxo de dados
 
@@ -127,12 +91,13 @@ quarentena) → **Gold** (indicador por município, meta × realizado, evoluçã
 Fluxo completo, com as transformações de cada camada, em
 [`docs/fluxo-de-dados.md`](docs/fluxo-de-dados.md).
 
+
 ## 7. Tecnologias utilizadas
 
 | Componente | Ferramenta | Justificativa |
 |-----------|-----------|---------------|
 | Fonte | Base dos Dados (BigQuery) | Datasets educacionais estruturados, nativos do BigQuery |
-| Processamento | Apache Spark / PySpark (Databricks) | Padrão de mercado para processamento distribuído; alinhado ao curso |
+| Processamento | Apache Spark / PySpark (Databricks) | Processamento distribuído, padrão de mercado |
 | Camadas | Delta Lake | Transações ACID, time travel e schema enforcement sobre o data lake |
 | Streaming | Pub/Sub + Structured Streaming | Ingestão desacoplada de eventos em tempo quase-real |
 | Warehouse analítico | BigQuery | Serverless, pay-per-scan — melhor eficiência de custos (FinOps) |
@@ -160,12 +125,11 @@ do BigQuery: a **ingestão completa processa ≈ 272 MB → US$ 0,0017 por execu
 
 ## 10. Aplicação em IA
 
-O desafio pede para **explicar** (não construir) como a camada Gold habilita aplicações de
-IA/ML. Como a Gold já entrega o indicador por município, a comparação meta × realizado e a
+Como a Gold já entrega o indicador por município, a comparação meta × realizado e a
 série temporal, ela funciona como uma base de *features* pronta para alguns usos:
 
 **a) Prever quais municípios estão em risco de não bater a meta de 2030.**
-Um modelo de classificação (ex.: gradient boosting) usaria como features a `taxa_realizada`
+Um modelo de classificação usaria como features a `taxa_realizada`
 atual, o `gap_pp`, a tendência vinda de `evolucao_municipio`, a UF/região e a rede. A saída —
 "no caminho" vs "em risco" — permite **priorizar política pública** e agir antes, onde é mais
 necessário.
@@ -174,16 +138,12 @@ necessário.
 Uma regressão (ou um modelo de série temporal) sobre o histórico realizado + a trajetória de
 metas estima a taxa futura e mostra o esforço necessário para fechar o gap.
 
-**c) Agrupar municípios por perfil de trajetória (clustering).**
-K-means/DBSCAN sobre as curvas de evolução separam grupos como "já atingiram", "avançando
-rápido" e "estagnados", permitindo desenhar estratégias por grupo em vez de caso a caso.
-
-**d) Alertas near-real-time.**
+**c) Alertas near-real-time.**
 A tabela `indicador_stream_recente`, alimentada pela ingestão de streaming, permitiria
 disparar **alertas automáticos** quando uma nova medição apontasse queda relevante do
-indicador — sem esperar o ciclo batch anual.
+indicador — sem esperar o ciclo batch.
 
-Em produção, esses modelos seriam treinados fora da Gold (Databricks ML / Vertex AI),
+Em produção, esses modelos seriam treinados fora da Gold,
 consumindo-a como *feature store*, e devolveriam os scores para o próprio BigQuery, fechando
 o ciclo **dados → modelo → decisão**.
 
@@ -199,7 +159,7 @@ tech-challenge-alfabetizacao/
 │   ├── quality/          # regras de qualidade + quarentena
 │   └── export/           # publicação da Gold no BigQuery
 ├── docs/
-│   └── evidencias/    # prints da pipeline rodando (bronze, silver, gold, BigQuery, dashboard)
+│   └── evidencias/    # prints da pipeline (bronze, silver, gold, BigQuery, dashboard)
 └── data/              # camadas locais para dev (não versionado)
 ```
 
@@ -221,13 +181,6 @@ tech-challenge-alfabetizacao/
 4. `04_quality` — regras de qualidade + quarentena.
 5. `05_gold` — datasets analíticos → Gold.
 
-**Publicação e consumo**
-- `python -m src.export.publish_bigquery` publica a Gold no dataset `alfabetizacao_gold`
-  (BigQuery). Alternativa: a célula de export do `05_gold` (conector `spark-bigquery`).
-- Dashboard: Looker Studio conectado ao dataset `alfabetizacao_gold`.
-
-O `config/settings.py` centraliza caminhos e parâmetros; a variável de ambiente `GCP_PROJECT`
-define o projeto que paga as consultas no BigQuery.
 
 ---
 

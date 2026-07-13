@@ -2,14 +2,8 @@
 # MAGIC %md
 # MAGIC # 04 — Qualidade + Quarentena
 # MAGIC
-# MAGIC Aplica as regras de qualidade sobre as tabelas da **Silver** e separa os registros
-# MAGIC reprovados em uma camada de **quarentena** (com o motivo), preservando-os para
-# MAGIC auditoria em vez de descartá-los.
-# MAGIC
-# MAGIC **Regras:** nulo em chave · chave duplicada · percentual fora de [0,100] · ano fora
-# MAGIC de [2019,2030]. As faixas e chaves vêm de `config/settings.py`.
-# MAGIC
-# MAGIC **Pré-requisitos:** Silver já gravada (notebook 03).
+# MAGIC Regras (nulo/duplicidade em chave, percentual e ano fora de faixa) separam aprovados de quarentena, com o motivo.
+# MAGIC Pré-req: Silver gravada (03).
 
 # COMMAND ----------
 
@@ -42,10 +36,7 @@ print("Quarentena:", QUARENTENA)
 
 # MAGIC %md
 # MAGIC ## Alvos da avaliação
-# MAGIC
-# MAGIC Cada tabela conformada com sua chave primária e as colunas de percentual a validar.
-# MAGIC (A integrada `indicador_municipio` não entra: seus nulos de meta são esperados —
-# MAGIC não existe meta municipal para toda rede.)
+# MAGIC (a integrada `indicador_municipio` não entra: seus nulos de meta são esperados)
 
 # COMMAND ----------
 
@@ -70,7 +61,7 @@ for nome, chaves, pct in ALVOS:
     df = ler_silver(nome)
     aprovados, quarentena = regras.avaliar_qualidade(df, chaves, pct, settings.LIMITES)
 
-    # grava a quarentena da tabela (mesmo vazia, para o caminho existir)
+    # grava a quarentena (mesmo vazia)
     (quarentena.write.format("delta").mode("overwrite")
         .option("overwriteSchema", "true").save(f"{QUARENTENA}/{nome}"))
 

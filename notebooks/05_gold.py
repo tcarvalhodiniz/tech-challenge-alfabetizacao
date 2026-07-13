@@ -2,15 +2,9 @@
 # MAGIC %md
 # MAGIC # 05 — Camada Gold
 # MAGIC
-# MAGIC Consome a Silver e entrega os datasets analíticos para o dashboard (Looker Studio)
-# MAGIC e para exploração/ML:
-# MAGIC
-# MAGIC - **indicador_municipio** — meta × realizado por município/rede/ano (+ gap, atingiu_meta)
-# MAGIC - **evolucao_municipio** — série temporal (realizado + trajetória de metas até 2030)
-# MAGIC - **indicador_uf** — meta × realizado por UF (resultados oficiais estaduais)
-# MAGIC - **indicador_stream_recente** — última medição do streaming por município (near-real-time)
-# MAGIC
-# MAGIC **Pré-requisitos:** Silver já gravada (notebook 03).
+# MAGIC Datasets analíticos para o dashboard: `indicador_municipio` (meta × realizado + gap),
+# MAGIC `evolucao_municipio` (série até 2030), `indicador_uf` e `indicador_stream_recente`.
+# MAGIC Pré-req: Silver gravada (03).
 
 # COMMAND ----------
 
@@ -23,7 +17,7 @@ while _raiz != "/" and not os.path.isdir(os.path.join(_raiz, "config")):
 sys.path.insert(0, _raiz)
 sys.path.append("..")
 
-# limpa cache de módulos do repo (para um git pull recente valer sem reiniciar o Python)
+# limpa cache dos módulos do repo (git pull vale sem reiniciar o Python)
 for _m in [m for m in list(sys.modules) if m == "config" or m.startswith(("config.", "src."))]:
     del sys.modules[_m]
 
@@ -117,32 +111,3 @@ display(g_evolucao.orderBy("id_municipio", "tipo", "ano_ref").limit(20))
 
 print("indicador_uf (meta x realizado por UF):")
 display(g_uf.filter(F.col("meta_ano").isNotNull()).orderBy("sigla_uf", "ano").limit(15))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 4. (Opcional) Export para o BigQuery
-# MAGIC
-# MAGIC Publica as tabelas Gold no BigQuery para o Looker Studio consumir. Requer:
-# MAGIC 1. um **dataset** BigQuery (ex.: `alfabetizacao_gold`) já criado no projeto;
-# MAGIC 2. a service account com papel **BigQuery Data Editor** nesse dataset;
-# MAGIC 3. um **bucket GCS** temporário para o conector (`temporaryGcsBucket`).
-# MAGIC
-# MAGIC Deixe `EXPORTAR_BQ = True` só quando esses pré-requisitos estiverem prontos.
-
-# COMMAND ----------
-
-EXPORTAR_BQ = False
-BQ_DATASET = "alfabetizacao_gold"
-GCS_BUCKET_TEMP = "SEU_BUCKET_TEMP"  # ajustar
-
-if EXPORTAR_BQ:
-    for nome in ["indicador_municipio", "evolucao_municipio", "indicador_uf", "indicador_stream_recente"]:
-        (spark.read.format("delta").load(f"{GOLD}/{nome}")
-            .write.format("bigquery")
-            .option("table", f"{settings.BILLING_PROJECT_ID}.{BQ_DATASET}.{nome}")
-            .option("temporaryGcsBucket", GCS_BUCKET_TEMP)
-            .mode("overwrite").save())
-        print("exportado:", nome)
-else:
-    print("Export para BigQuery desativado (EXPORTAR_BQ=False).")

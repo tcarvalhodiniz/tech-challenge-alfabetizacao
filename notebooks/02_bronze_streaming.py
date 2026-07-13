@@ -2,23 +2,15 @@
 # MAGIC %md
 # MAGIC # 02 — Ingestão Streaming → Bronze
 # MAGIC
-# MAGIC Simula a chegada de medições do indicador em tempo quase-real e as ingere na
-# MAGIC camada **Bronze** via **Spark Structured Streaming**, completando a pipeline
-# MAGIC híbrida (batch + streaming) exigida pelo desafio.
-# MAGIC
-# MAGIC **Fluxo:** o produtor grava lotes de eventos NDJSON na landing do Volume →
-# MAGIC o Structured Streaming lê incrementalmente (com checkpoint) → grava na Bronze em Delta.
-# MAGIC
-# MAGIC **Pré-requisitos:** apenas o Volume `workspace.default.alfabetizacao`.
-# MAGIC Diferente do batch, **não usa BigQuery nem credenciais** — os eventos são
-# MAGIC gerados localmente.
+# MAGIC Produtor grava eventos NDJSON na landing → Structured Streaming consome (com checkpoint) → Bronze.
+# MAGIC Só usa o Volume `alfabetizacao` (sem BigQuery/credencial).
 
 # COMMAND ----------
 
 import os
 import sys
 
-# Torna os módulos do repositório importáveis (mesma lógica robusta do notebook batch).
+# raiz do repo no sys.path
 _raiz = os.getcwd()
 while _raiz != "/" and not os.path.isdir(os.path.join(_raiz, "config")):
     _raiz = os.path.dirname(_raiz)
@@ -41,11 +33,8 @@ print("Destino Bronze:", DESTINO)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## (Opcional) Reset para uma demonstração limpa
-# MAGIC
-# MAGIC Zera a landing, o checkpoint e a tabela de destino para poder rodar o notebook
-# MAGIC do início quantas vezes quiser. Comente esta célula se quiser **acumular** eventos
-# MAGIC entre execuções.
+# MAGIC ## (Opcional) Reset
+# MAGIC Zera landing, checkpoint e destino para rodar do zero. Comente para acumular eventos.
 
 # COMMAND ----------
 
@@ -53,15 +42,13 @@ for _p in (LANDING, CKPT, DESTINO):
     try:
         dbutils.fs.rm(_p, recurse=True)
     except Exception:
-        pass  # diretório ainda não existe — nada a remover
+        pass
 print("Diretórios de streaming zerados.")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 1. Produtor — gera eventos na landing
-# MAGIC
-# MAGIC 5 lotes de 20 eventos, com 2s entre lotes, simulando a chegada gradual.
 
 # COMMAND ----------
 
@@ -78,10 +65,7 @@ print(f"\n{len(arquivos)} arquivos de eventos gerados.")
 
 # MAGIC %md
 # MAGIC ## 2. Consumidor — Structured Streaming → Bronze
-# MAGIC
-# MAGIC `availableNow=True`: processa todos os eventos já disponíveis e encerra
-# MAGIC (bom pra validar no notebook). Pra simular o fluxo contínuo, troque para
-# MAGIC `continuo=True` e deixe a célula rodando enquanto o produtor gera mais lotes.
+# MAGIC `continuo=False` (availableNow) processa e encerra; `continuo=True` roda contínuo.
 
 # COMMAND ----------
 
