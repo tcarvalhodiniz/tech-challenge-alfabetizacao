@@ -2,15 +2,8 @@
 # MAGIC %md
 # MAGIC # 03 — Camada Silver
 # MAGIC
-# MAGIC Lê a Bronze (batch + streaming), limpa e padroniza cada base, decodifica as
-# MAGIC categorias (`rede`/`serie`), despivota as metas e integra o resultado por
-# MAGIC município com as metas, gerando a camada **Silver**.
-# MAGIC
-# MAGIC **Entrega:** tabelas conformadas por entidade + a visão integrada
-# MAGIC `indicador_municipio` (realizado × meta por município/ano/rede) + a taxa
-# MAGIC recalculada dos microdados (`taxa_alunos_calc`).
-# MAGIC
-# MAGIC **Pré-requisitos:** Bronze já gravada (notebooks 01 e 02).
+# MAGIC Limpa e padroniza cada base, decodifica `rede`/`serie`, despivota as metas e integra município × meta.
+# MAGIC Pré-req: Bronze gravada (01 e 02).
 
 # COMMAND ----------
 
@@ -23,8 +16,7 @@ while _raiz != "/" and not os.path.isdir(os.path.join(_raiz, "config")):
 sys.path.insert(0, _raiz)
 sys.path.append("..")
 
-# Remove os módulos do repo que já estejam em cache, pra que um `git pull` recente
-# passe a valer sem precisar reiniciar o Python (o import não recarrega sozinho).
+# limpa cache dos módulos do repo (git pull vale sem reiniciar o Python)
 for _m in [m for m in list(sys.modules) if m == "config" or m.startswith(("config.", "src."))]:
     del sys.modules[_m]
 
@@ -47,45 +39,32 @@ print("Silver:", SILVER)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Limpeza, padronização e decodificação das categorias
-# MAGIC
-# MAGIC Normaliza chaves, remove metadados da Bronze e traduz os códigos de `rede`/`serie`
-# MAGIC para descrição legível (`rede_desc`, `serie_desc`) via tabela `dicionario`.
+# MAGIC ## 1. Limpeza, padronização e decodificação
 
 # COMMAND ----------
 
 dicionario = ler_bronze("dicionario")
 
 def preparar(nome):
-    """Limpeza + decodificação de rede/serie + rótulo genérico para dimensão nula."""
     df = clean.limpar(ler_bronze(nome))
     df = clean.decodificar(df, dicionario, "rede")
     df = clean.decodificar(df, dicionario, "serie")
-    # dimensões categóricas nulas ganham rótulo genérico (medidas numéricas ficam null)
-    df = clean.preencher_categoria_nula(df, ["rede_desc", "serie_desc"])
-    return df
+    return clean.preencher_categoria_nula(df, ["rede_desc", "serie_desc"])
 
 uf        = preparar("uf")
 municipio = preparar("municipio")
 alunos    = preparar("alunos")
 
-# metas: limpa e despivota (largo -> longo). Nas tabelas de meta, `rede` já vem como
-# texto (ex.: "Municipal", "Pública") em vez de codigo -- nao ha o que decodificar
-# aqui, diferente das tabelas de resultado (uf/municipio).
+# metas: limpa e despivota (`rede` já vem como texto, não decodifica)
 def preparar_meta(nome):
     df = clean.limpar(ler_bronze(nome))
     return metas.despivotar_metas(df, settings.COLUNAS_META)
 
-# meta_uf/meta_brasil trazem rede = "Pública", que nao tem correspondencia textual
-# exata com nenhum rede_desc de uf ("Pública (Estadual e Municipal)" ou "Pública
-# (Federal, Estadual e Municipal)"). Ainda nao integramos uf/brasil com suas metas
-# por causa disso -- decidir esse de-para quando construirmos a Gold por UF/Brasil.
 meta_brasil    = preparar_meta("meta_alfabetizacao_brasil")
 meta_uf        = preparar_meta("meta_alfabetizacao_uf")
 meta_municipio = preparar_meta("meta_alfabetizacao_municipio")
 
-# streaming: limpa e deduplica por evento_id (idempotência). A reconciliação com o
-# batch (última medição x realizado) fica na Gold.
+# streaming: limpa e deduplica por evento_id
 indicador_stream = clean.limpar(
     spark.read.format("delta").load(BRONZE_INDICADOR)
 ).dropDuplicates(["evento_id"])
@@ -95,10 +74,7 @@ print("municipio:", municipio.count(), "| indicador_stream:", indicador_stream.c
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Agregação dos microdados de alunos
-# MAGIC
-# MAGIC Taxa recalculada da `proficiencia` vs corte **743** (ponderada por `peso_aluno`),
-# MAGIC por município/ano/rede — cross-check da taxa oficial (em dev, sobre a amostra).
+# MAGIC ## 2. Agregação dos alunos (taxa recalculada, corte 743)
 
 # COMMAND ----------
 
@@ -109,9 +85,6 @@ display(taxa_alunos_calc.limit(10))
 
 # MAGIC %md
 # MAGIC ## 3. Integração — indicador por município (realizado × meta)
-# MAGIC
-# MAGIC Junta o realizado (`municipio`) com as metas municipais e deriva a `sigla_uf`
-# MAGIC a partir do `id_municipio` (integração leve; a análise pesada fica na Gold).
 
 # COMMAND ----------
 
@@ -123,8 +96,6 @@ indicador_municipio.printSchema()
 
 # MAGIC %md
 # MAGIC ## 4. Gravação da Silver
-# MAGIC
-# MAGIC Cada base conformada + a visão integrada, em Delta particionado por `ano`.
 
 # COMMAND ----------
 
