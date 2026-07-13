@@ -76,7 +76,38 @@ Meta Alfabetização por Município · Município · Dados de alunos.
 - **Gold:** tabelas analíticas em Delta, exportadas para **BigQuery**.
 - **Consumo:** [dashboard no **Looker Studio**](https://datastudio.google.com/reporting/98ab3664-b93d-46d5-a597-1cc1dbb26f27) sobre o BigQuery.
 
-## 5. Arquitetura
+## 5. Diagrama da arquitetura
+
+```mermaid
+flowchart TB
+    subgraph Fontes["Fontes de dados"]
+        BD["Base dos Dados / BigQuery<br/>UF · Municipio · Metas · Alunos"]
+        EV["Eventos do indicador<br/>novas medicoes"]
+    end
+
+    subgraph Ingestao["Ingestao hibrida"]
+        BATCH["Batch<br/>PySpark"]
+        STREAM["Streaming<br/>Structured Streaming"]
+    end
+
+    subgraph Medalhao["Arquitetura Medalhao · Delta Lake"]
+        BRONZE["BRONZE<br/>bruto + metadados"]
+        SILVER["SILVER<br/>limpeza · qualidade · integracao"]
+        GOLD["GOLD<br/>meta x realizado · evolucao"]
+        QUAR["Quarentena"]
+    end
+
+    subgraph Consumo["Consumo · GCP"]
+        BQ["BigQuery"]
+        LOOKER["Looker Studio"]
+    end
+
+    BD --> BATCH --> BRONZE
+    EV --> STREAM --> BRONZE
+    BRONZE --> SILVER
+    SILVER -. invalidos .-> QUAR
+    SILVER --> GOLD --> BQ --> LOOKER
+```
 
 Detalhes e mapeamento para serviços GCP em [`docs/arquitetura.md`](docs/arquitetura.md).
 

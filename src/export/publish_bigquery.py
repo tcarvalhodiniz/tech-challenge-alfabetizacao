@@ -1,14 +1,8 @@
 """
-Publica as tabelas Gold no BigQuery.
+Publica as tabelas Gold no BigQuery (dataset `alfabetizacao_gold`), de onde o Looker Studio consome.
+Roda os mesmos módulos de transformação do projeto sobre a Bronze do BigQuery.
 
-Roda o pipeline (Bronze no BigQuery → Silver → Gold) usando os mesmos módulos de
-transformação do projeto e carrega as tabelas Gold num dataset do BigQuery, de onde
-o Looker Studio consome. É a via portátil de export — o código de transformação é o
-mesmo que roda no Databricks (só muda a origem/destino), alternativa ao conector
-`spark-bigquery` do notebook `05_gold`.
-
-Uso:
-    GOOGLE_APPLICATION_CREDENTIALS=chave.json python -m src.export.publish_bigquery
+Uso: GOOGLE_APPLICATION_CREDENTIALS=chave.json python -m src.export.publish_bigquery
 """
 
 import os

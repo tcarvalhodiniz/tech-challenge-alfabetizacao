@@ -1,10 +1,4 @@
-"""
-Qualidade de dados — regras + quarentena.
-
-Aplica checagens de qualidade sobre um DataFrame (nulos em chave, chave duplicada,
-percentuais fora da faixa, ano fora da faixa) e separa os registros em aprovados vs
-quarentena, anexando em cada reprovado o(s) motivo(s) da reprovação.
-"""
+"""Qualidade — regras (nulo/duplicidade em chave, faixas) que separam aprovados de quarentena, com o motivo."""
 
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
@@ -17,13 +11,8 @@ def avaliar_qualidade(
     limites: dict | None = None,
 ):
     """
-    Separa `df` em (aprovados, quarentena) segundo as regras de qualidade.
-
-    - `chaves`: colunas que formam a chave primária (nulo ou duplicidade reprovam).
-    - `colunas_pct`: colunas de percentual que devem ficar em [0, 100] quando não nulas.
-    - `limites`: faixas válidas (usa `indicador_pct` e `ano`); normalmente settings.LIMITES.
-
-    Cada reprovado ganha a coluna `motivo_quarentena` (motivos separados por "; ").
+    Separa `df` em (aprovados, quarentena) pelas regras. Reprovados ganham `motivo_quarentena`.
+    `chaves`: chave primária; `colunas_pct`: colunas em [0,100]; `limites`: faixas (settings.LIMITES).
     """
     colunas_pct = colunas_pct or []
     limites = limites or {}
@@ -41,7 +30,7 @@ def avaliar_qualidade(
         df = df.withColumn("_dup", F.count(F.lit(1)).over(w))
         checagens.append(F.when(F.col("_dup") > 1, F.lit("chave_duplicada")))
 
-    # 3) percentual fora da faixa (só avalia valores não nulos — null é ausência, não erro)
+    # 3) percentual fora da faixa (só valores não nulos)
     lo_p, hi_p = limites.get("indicador_pct", (0.0, 100.0))
     for c in colunas_pct:
         if c in df.columns:
@@ -54,7 +43,7 @@ def avaliar_qualidade(
         fora = F.col("ano").isNotNull() & ((F.col("ano") < lo_a) | (F.col("ano") > hi_a))
         checagens.append(F.when(fora, F.lit("ano_fora_da_faixa")))
 
-    # array com os motivos aplicáveis (remove os `when` que deram null = regra ok)
+    # motivos aplicáveis (remove os nulls)
     motivos = F.filter(F.array(*checagens), lambda x: x.isNotNull())
     df = df.withColumn("_motivos", motivos)
 

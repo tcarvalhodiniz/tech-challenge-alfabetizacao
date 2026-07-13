@@ -1,11 +1,4 @@
-"""
-Silver — integração das bases.
-
-Junta o resultado por município (realizado) com as metas municipais despivotadas e
-acrescenta a UF, formando a visão integrada município × ano × rede que alimenta a
-Gold. A UF é derivada dos 2 primeiros dígitos do `id_municipio` (código IBGE), sem
-precisar de uma fonte extra.
-"""
+"""Silver — integração: junta município (realizado) × metas municipais e deriva a UF do id_municipio."""
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
@@ -27,17 +20,8 @@ def adicionar_sigla_uf(df: DataFrame) -> DataFrame:
 
 def integrar_indicador_municipio(municipio: DataFrame, meta_muni_long: DataFrame) -> DataFrame:
     """
-    Integra o realizado (tabela `municipio`) com as metas municipais despivotadas.
-
-    `municipio` traz `rede` como código (ex.: "3") e precisa já ter passado por
-    `silver_clean.decodificar(..., "rede")`, que adiciona `rede_desc` (ex.: "Municipal").
-    A tabela de metas municipais, diferente da de resultados, já vem com `rede` como
-    texto (`"Municipal"`) — é a única rede para a qual a meta municipal é publicada.
-    Por isso o join usa `rede_desc` (município) == `rede` (meta), e não o código bruto.
-
-    Join por `id_municipio` + `ano` + rede (a meta não tem `serie`; ela vale para
-    o município/ano/rede). O resultado é uma linha por município × ano × rede × serie
-    × ano-meta, com o realizado e a meta lado a lado, e a `sigla_uf`.
+    Junta o realizado (`municipio`) com as metas municipais por id_municipio + ano + rede.
+    O join usa `rede_desc` (código decodificado) == `rede` da meta (que vem como texto).
     """
     metas = meta_muni_long.select(
         F.col("id_municipio").alias("_meta_id_municipio"),
