@@ -1,10 +1,4 @@
-"""
-Ingestão Streaming → Bronze (Spark Structured Streaming).
-
-Consome os eventos de medição do indicador que o produtor deposita na pasta de
-landing (arquivos NDJSON) e grava, de forma incremental e com checkpoint, na
-camada Bronze em Delta — sem regras de negócio, apenas com metadados de ingestão.
-"""
+"""Ingestão Streaming → Bronze: consome os eventos NDJSON da landing (com checkpoint) e grava em Delta."""
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
@@ -12,12 +6,7 @@ from pyspark.sql import types as T
 
 
 def schema_eventos() -> T.StructType:
-    """
-    Schema explícito dos eventos.
-
-    Em streaming a inferência de schema sai cara e imprevisível, então o contrato
-    dos eventos fica fixado aqui.
-    """
+    """Schema explícito dos eventos (evita inferência em streaming)."""
     return T.StructType(
         [
             T.StructField("evento_id", T.StringType()),
@@ -41,21 +30,13 @@ def iniciar_stream_bronze(
     continuo: bool = False,
 ):
     """
-    Inicia o job de Structured Streaming: lê os eventos NDJSON de `origem` e grava
-    em Delta em `destino`, com checkpoint em `checkpoint`. Retorna a `StreamingQuery`.
-
-    - `continuo=False` (padrão): `trigger(availableNow=True)` — processa tudo o que já
-      chegou e encerra sozinho (bom pra rodar e validar no notebook).
-    - `continuo=True`: micro-batches a cada 10s, roda indefinidamente (demonstra o
-      near-real-time; interrompa a célula para parar).
-
-    O particionamento por `data_ingestao_dt` e o formato Delta seguem o mesmo padrão
-    da ingestão batch, mantendo a Bronze homogênea entre as duas fontes.
+    Lê os eventos NDJSON de `origem` e grava em Delta (`destino`) com checkpoint.
+    `continuo=False`: availableNow (processa e encerra). `continuo=True`: micro-batches contínuos.
     """
     leitura = (
         spark.readStream
         .schema(schema_eventos())
-        .option("maxFilesPerTrigger", 1)  # um arquivo por micro-batch = chegada gradual
+        .option("maxFilesPerTrigger", 1)  # um arquivo por micro-batch
         .json(origem)
     )
 

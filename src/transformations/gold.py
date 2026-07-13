@@ -1,10 +1,4 @@
-"""
-Gold — datasets analíticos prontos para BI/ML.
-
-Consome a Silver e entrega tabelas denormalizadas/agregadas para o dashboard:
-meta × realizado por município, evolução temporal rumo a 2030, meta × realizado por
-UF e a medição mais recente vinda do streaming.
-"""
+"""Gold — datasets analíticos (meta × realizado, evolução, UF, near-real-time) para BI/ML."""
 
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
@@ -13,22 +7,14 @@ from src.transformations.silver_integracao import adicionar_sigla_uf
 
 
 def indicador_municipio(municipio: DataFrame, meta_muni_long: DataFrame) -> DataFrame:
-    """
-    Meta × realizado por município/rede/ano.
-
-    O realizado (taxa do ano de avaliação) é alinhado com a meta daquele mesmo ano
-    (`valor_meta` onde `ano_meta == ano`). `gap_pp` = meta − realizado (em pontos
-    percentuais); `atingiu_meta` = realizado ≥ meta. Municípios/anos sem meta ficam
-    com meta/gap nulos (ex.: 2023 não tem meta; meta municipal só existe p/ Municipal).
-    """
+    """Meta × realizado por município/rede/ano, com gap_pp e atingiu_meta."""
     base = adicionar_sigla_uf(
         municipio.select(
             "id_municipio", "ano", "rede", "rede_desc", "serie",
             F.col("taxa_alfabetizacao").alias("taxa_realizada"),
         )
     )
-    # a trajetória de metas é fixa e vem repetida por ano-fonte (2023/2024) — dedup por
-    # (município, ano-alvo, rede) para não duplicar o realizado no join.
+    # dedup: a trajetória de metas vem repetida por ano-fonte (2023/2024)
     metas = meta_muni_long.select(
         F.col("id_municipio").alias("_id"),
         F.col("ano_meta").alias("_ano"),
@@ -51,11 +37,7 @@ def indicador_municipio(municipio: DataFrame, meta_muni_long: DataFrame) -> Data
 
 
 def evolucao_municipio(municipio: DataFrame, meta_muni_long: DataFrame) -> DataFrame:
-    """
-    Série temporal por município/rede: o realizado de cada ano avaliado + a trajetória
-    de metas até 2030, empilhados (`tipo` = 'realizado' | 'meta'). Alimenta o gráfico
-    de linha "onde está × para onde precisa ir".
-    """
+    """Série temporal por município/rede: realizado + metas até 2030 (tipo = 'realizado'|'meta')."""
     realizado = adicionar_sigla_uf(municipio).select(
         "id_municipio", "sigla_uf", "rede_desc",
         F.col("ano").alias("ano_ref"),
@@ -74,11 +56,8 @@ def evolucao_municipio(municipio: DataFrame, meta_muni_long: DataFrame) -> DataF
 
 def indicador_uf(uf: DataFrame, meta_uf_long: DataFrame) -> DataFrame:
     """
-    Meta × realizado por UF/rede/ano, usando os resultados oficiais por UF.
-
-    A meta estadual vem com `rede = "Pública"`. Assumimos que corresponde à
-    "Pública (Estadual e Municipal)" (código 5) — a rede pública de ensino básico.
-    >>> PREMISSA A CONFIRMAR: "Pública" (meta) == "Pública (Estadual e Municipal)". <<<
+    Meta × realizado por UF (resultados oficiais estaduais). A meta estadual vem com
+    `rede = "Pública"`, casada aqui com a rede "Pública (Estadual e Municipal)".
     """
     realizado = uf.select(
         "sigla_uf", "ano", "rede", "rede_desc",
@@ -101,11 +80,7 @@ def indicador_uf(uf: DataFrame, meta_uf_long: DataFrame) -> DataFrame:
 
 
 def indicador_stream_recente(indicador_stream: DataFrame) -> DataFrame:
-    """
-    Última medição do indicador vinda do streaming, por município (near-real-time).
-    Usa `timestamp_evento` para pegar o evento mais recente de cada município — é a
-    reconciliação batch × streaming acontecendo na Gold.
-    """
+    """Última medição do streaming por município (pelo timestamp)."""
     w = Window.partitionBy("id_municipio").orderBy(F.col("timestamp_evento").desc())
     return (
         indicador_stream.withColumn("_rn", F.row_number().over(w))

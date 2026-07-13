@@ -1,24 +1,11 @@
-"""
-Silver — agregação dos microdados de alunos.
-
-Recalcula a taxa de alfabetização a partir da proficiência individual vs o ponto de
-corte do Saeb (743), ponderada pelo peso amostral, por município/ano/rede. Serve de
-cross-check da taxa oficial na Gold.
-
-Obs.: em desenvolvimento os microdados vêm com `LIMIT`, então isso é uma amostra —
-com a base inteira (produção) a taxa recalculada tende a bater com a oficial.
-"""
+"""Silver — recalcula a taxa de alfabetização dos microdados (proficiência ≥ 743, ponderada) por município."""
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
 
 def agregar_taxa_alunos(alunos: DataFrame, ponto_corte: float) -> DataFrame:
-    """
-    Agrega os alunos por município/ano/rede e calcula a taxa de alfabetização
-    ponderada: soma dos pesos dos alunos com `proficiencia >= ponto_corte` sobre a
-    soma total dos pesos. Considera apenas alunos com proficiência registrada.
-    """
+    """Taxa ponderada por município/ano/rede: peso dos alunos com proficiência ≥ corte / peso total."""
     peso = F.coalesce(F.col("peso_aluno").cast("double"), F.lit(1.0))
     alfabetizado = (F.col("proficiencia") >= F.lit(ponto_corte)).cast("double")
 

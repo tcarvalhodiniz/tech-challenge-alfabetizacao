@@ -1,13 +1,8 @@
 """
 Produtor de eventos de streaming → landing da Bronze.
 
-Simula a chegada, em tempo quase-real, de medições do indicador de alfabetização
-(uma `taxa_alfabetizacao` reportada por município). Cada lote de eventos é gravado
-como um arquivo JSON (NDJSON) na pasta de landing; o job de Structured Streaming
-(`streaming_bronze.py`) consome esses arquivos incrementalmente.
-
-É Python puro (sem Spark) de propósito, pra rodar como um "produtor" à parte —
-inclusive em paralelo ao consumidor, como uma fila/tópico de verdade faria.
+Gera lotes de eventos NDJSON (medições do indicador por município) que o
+`streaming_bronze.py` consome. Python puro, roda como produtor à parte.
 """
 
 from __future__ import annotations
@@ -19,8 +14,7 @@ import time
 import uuid
 from datetime import datetime
 
-# Amostra de municípios reais (código IBGE de 7 dígitos + UF) para dar realismo aos
-# eventos. Em produção, essa medição chegaria de um tópico Pub/Sub / fila de eventos.
+# municípios reais (código IBGE + UF). Em produção viria de um Pub/Sub / fila.
 MUNICIPIOS_AMOSTRA = [
     ("3550308", "SP"),  # São Paulo
     ("3304557", "RJ"),  # Rio de Janeiro
@@ -50,7 +44,6 @@ def gerar_evento(ano: int) -> dict:
         "ano": ano,
         "rede": random.choice(REDES),
         "serie": random.choice(SERIES),
-        # taxa plausível (%) com uma casa decimal
         "taxa_alfabetizacao": round(random.uniform(45.0, 95.0), 1),
         "timestamp_evento": datetime.now().isoformat(timespec="seconds"),
     }
@@ -74,12 +67,7 @@ def produzir_eventos(
     intervalo_seg: float = 2.0,
     ano: int = 2024,
 ) -> list[str]:
-    """
-    Produz `n_lotes` arquivos, cada um com `eventos_por_lote` eventos, aguardando
-    `intervalo_seg` entre lotes para simular a chegada gradual (streaming).
-
-    Retorna a lista de caminhos dos arquivos gerados.
-    """
+    """Gera `n_lotes` arquivos (com pausa entre lotes, simulando streaming); retorna os caminhos."""
     arquivos: list[str] = []
     for i in range(n_lotes):
         lote = [gerar_evento(ano) for _ in range(eventos_por_lote)]
